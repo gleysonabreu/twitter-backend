@@ -1,0 +1,52 @@
+name: E2E Tests
+
+on: [pull_request]
+
+jobs:
+  run-e2e-tests:
+    name: Run e2e Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgresql:
+        image: bitnami/postgresql
+        env:
+          POSTGRESQL_USERNAME: twitter
+          POSTGRESQL_PASSWORD: docker
+          POSTGRESQL_DATABASE: twitter
+        ports:
+          - 5432:5432
+        volumes:
+          - postgres-data:/var/lib/postgresql/data
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 21
+
+      - name: Install dependencies (with cache)
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run Tests
+        run: pnpm test:e2e
+        env:
+          FRONTEND_URL: localhost:3000
+          RESEND_API_KEY: ${{secrets.RESEND_API_DUMMY}}
+          DATABASE_URL: postgresql://twitter:docker@localhost:5432/twitter?schema=public
+          PUBLIC_KEY_JWT: ${{secrets.JWT_DUMMY_PUBLIC}}
+          PRIVATE_KEY_JWT: ${{secrets.JWT_DUMMY_PRIVATE}}
+          CLOUDFLARE_ID: ${{secrets.CLOUDFLARE_ID}}
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          AWS_BUCKET_NAME: ${{secrets.AWS_BUCKET_NAME}}

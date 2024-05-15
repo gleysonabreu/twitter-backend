@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  postgres:
+    container_name: db-twitter
+    image: postgres:16.2-alpine3.19
+    ports:
+      - ${DATABASE_PORT}:5432
+    environment:
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASS}
+      - POSTGRES_DB=${DATABASE_NAME}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - twitter
+
+  api-twitter:
+    build:
+      context: .
+    container_name: api-twitter
+    ports:
+      - 3333:3333
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASS}@postgres:5432/${DATABASE_NAME}?schema=public
+    depends_on:
+      - postgres
+    networks:
+      - twitter
+  
+networks:
+  twitter:
+    driver: bridge
+
+volumes:
+  postgres-data:

@@ -1,0 +1,29 @@
+name: Type checking
+
+on: [pull_request]
+
+jobs:
+  code:
+    name: Type checking code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 21
+
+      - name: Install dependencies
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          
+      - name: Install dependencies 
+        run: pnpm install
+
+      - name: Run TypeScript Check
+        run: pnpm tsc --noEmit

@@ -1,0 +1,123 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  postId    String   @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@map("favorites")
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  postId    String   @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@map("likes")
+}
+
+model Post {
+  id        String     @id @default(uuid())
+  userId    String     @map("user_id")
+  content   String
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime?  @updatedAt @map("updated_at")
+  comments  Comment[]
+  favorites Favorite[]
+  likes     Like[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("posts")
+}
+
+model Comment {
+  id           String        @id @default(uuid())
+  postId       String        @map("post_id")
+  userId       String        @map("user_id")
+  content      String
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime?     @updatedAt @map("updated_at")
+  parentId     String?
+  parent       Comment?      @relation("nestedComments", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      Comment[]     @relation("nestedComments")
+  post         Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likesComment LikeComment[]
+
+  @@map("comments")
+}
+
+model LikeComment {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  commentId String   @map("comment_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@map("likes_comment")
+}
+
+model Follow {
+  followedById String
+  followingId  String
+  followedBy   User   @relation("followedBy", fields: [followedById], references: [id], onDelete: Cascade)
+  following    User   @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followingId, followedById])
+  @@map("follows")
+}
+
+model User {
+  id                 String               @id @default(uuid())
+  firstName          String               @map("first_name")
+  lastName           String               @map("last_name")
+  email              String               @unique
+  username           String               @unique
+  password           String
+  birthDate          DateTime             @map("birth_date")
+  bio                String?
+  profileImage       String?              @map("profile_image")
+  coverImage         String?              @map("cover_image")
+  updatedAt          DateTime?            @updatedAt @map("updated_at")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  comments           Comment[]
+  favorites          Favorite[]
+  followedBy         Follow[]             @relation("followedBy")
+  following          Follow[]             @relation("following")
+  likes              Like[]
+  likesComment       LikeComment[]
+  posts              Post[]
+  verificationTokens VerificationTokens[]
+
+  @@map("users")
+}
+
+model VerificationTokens {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String    @map("user_id")
+  expiresAt DateTime
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@map("verification_tokens")
+}
